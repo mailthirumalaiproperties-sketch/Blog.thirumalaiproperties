@@ -7,7 +7,7 @@ const NAV = [
   { to: "/", label: "Dashboard", icon: "M3 12l9-9 9 9M5 10v10h5v-6h4v6h5V10" },
   { to: "/articles", label: "Articles", icon: "M7 4h10a2 2 0 012 2v14l-4-2-4 2-4-2-4 2V6a2 2 0 012-2zM9 8h6M9 12h6" },
   { to: "/categories", label: "Categories", icon: "M4 6h16M4 12h16M4 18h10" },
-  { to: "/media", label: "Images", icon: "M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01" },
+  { to: "/media", label: "Images & files", icon: "M4 5h16v14H4zM4 15l4-4 4 4 3-3 5 5M15 9h.01" },
   { to: "/seo", label: "SEO", icon: "M11 4a7 7 0 105.2 11.7L21 20.5M8 11h6M11 8v6" },
   { to: "/settings", label: "Site settings", icon: "M12 8a4 4 0 100 8 4 4 0 000-8zM4 12h2M18 12h2M12 4v2M12 18v2", permission: "settings.manage" },
   { to: "/users", label: "Users", icon: "M16 11a4 4 0 10-8 0 4 4 0 008 0zM4 20a8 8 0 0116 0", permission: "users.manage" },

@@ -1,11 +1,16 @@
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Image from "@tiptap/extension-image";
+import Youtube from "@tiptap/extension-youtube";
 import { Placeholder } from "@tiptap/extensions";
 import { useEffect, useState } from "react";
 import { mediaUrl } from "../lib/api.js";
+import { formatBytes } from "../lib/format.js";
 import MediaPicker from "./MediaPicker.jsx";
 import { Button, Checkbox, Field, Input, Modal } from "./ui.jsx";
+
+// watch?v=, youtu.be/, /embed/, /shorts/ and /live/ links all carry the 11-character video id.
+const YOUTUBE_ID = /(?:youtube(?:-nocookie)?\.com\/(?:watch\?(?:[^#]*&)?v=|embed\/|shorts\/|live\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/;
 
 function ToolButton({ active, disabled, onClick, label, children }) {
   return (
@@ -66,8 +71,51 @@ function LinkDialog({ open, initial, onClose, onSave, onRemove }) {
   );
 }
 
+function VideoDialog({ open, onClose, onInsert }) {
+  const [url, setUrl] = useState("");
+  useEffect(() => {
+    if (open) setUrl("");
+  }, [open]);
+  const id = url.trim().match(YOUTUBE_ID)?.[1];
+  const insert = () => id && onInsert(`https://www.youtube.com/watch?v=${id}`);
+  return (
+    <Modal
+      open={open}
+      onClose={onClose}
+      title="Add a YouTube video"
+      footer={
+        <Button variant="primary" disabled={!id} onClick={insert}>
+          Insert video
+        </Button>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <Field
+          label="YouTube link"
+          hint="Open the video on YouTube, click Share, copy the link and paste it here. Unlisted videos work too."
+          error={url.trim() && !id ? "That doesn't look like a YouTube video link." : ""}
+        >
+          {(fid) => (
+            <Input
+              id={fid}
+              autoFocus
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder="https://youtu.be/…"
+              onKeyDown={(e) => e.key === "Enter" && insert()}
+            />
+          )}
+        </Field>
+        {id && <img src={`https://i.ytimg.com/vi/${id}/hqdefault.jpg`} alt="Video preview" className="w-full max-w-sm rounded-lg border border-stone-200" />}
+      </div>
+    </Modal>
+  );
+}
+
 export default function RichEditor({ value, onChange, editable = true }) {
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [docPickerOpen, setDocPickerOpen] = useState(false);
+  const [videoOpen, setVideoOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
 
   const editor = useEditor({
@@ -79,6 +127,7 @@ export default function RichEditor({ value, onChange, editable = true }) {
         codeBlock: false,
       }),
       Image.configure({ HTMLAttributes: { loading: "lazy" } }),
+      Youtube.configure({ nocookie: true, modestBranding: true, rel: 0, width: 640, height: 360 }),
       Placeholder.configure({ placeholder: "Start writing your article… Use “Heading 2” for section titles." }),
     ],
     content: value || "",
@@ -151,6 +200,12 @@ export default function RichEditor({ value, onChange, editable = true }) {
         <ToolButton label="Insert image" onClick={() => setPickerOpen(true)}>
           Image
         </ToolButton>
+        <ToolButton label="Insert YouTube video" onClick={() => setVideoOpen(true)}>
+          Video
+        </ToolButton>
+        <ToolButton label="Insert PDF document" onClick={() => setDocPickerOpen(true)}>
+          PDF
+        </ToolButton>
         <ToolButton label="Divider line" onClick={() => chain().setHorizontalRule().run()}>
           ―
         </ToolButton>
@@ -170,6 +225,34 @@ export default function RichEditor({ value, onChange, editable = true }) {
         onClose={() => setPickerOpen(false)}
         title="Insert an image"
         onSelect={({ media, alt }) => chain().setImage({ src: mediaUrl(media.id), alt }).run()}
+      />
+      <MediaPicker
+        kind="document"
+        open={docPickerOpen}
+        onClose={() => setDocPickerOpen(false)}
+        onSelect={({ media, alt }) =>
+          chain()
+            .insertContent({
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: `${alt} (PDF, ${formatBytes(media.size)})`,
+                  // The ".pdf" ending lets the website style it as a download button.
+                  marks: [{ type: "link", attrs: { href: `${mediaUrl(media.id)}.pdf`, target: "_blank" } }],
+                },
+              ],
+            })
+            .run()
+        }
+      />
+      <VideoDialog
+        open={videoOpen}
+        onClose={() => setVideoOpen(false)}
+        onInsert={(src) => {
+          chain().setYoutubeVideo({ src }).run();
+          setVideoOpen(false);
+        }}
       />
       <LinkDialog
         open={linkOpen}

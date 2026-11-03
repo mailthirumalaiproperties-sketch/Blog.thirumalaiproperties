@@ -35,6 +35,44 @@ body {
 .tiptap img.ProseMirror-selectednode {
   outline: 3px solid var(--color-brand-yellow);
 }
+.tiptap div[data-youtube-video] {
+  margin: 1.5em 0;
+}
+.tiptap div[data-youtube-video] iframe {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: 0.75rem;
+}
+.tiptap div[data-youtube-video].ProseMirror-selectednode iframe {
+  outline: 3px solid var(--color-brand-yellow);
+}
+
+/* PDF links render as download buttons (same style as the website) */
+.prose-brand a[href$=".pdf"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6em;
+  padding: 0.6em 1em;
+  border: 1px solid #e7e5e4;
+  border-radius: 0.75rem;
+  background: var(--color-brand-cream);
+  color: var(--color-brand-dark);
+  font-weight: 600;
+  text-decoration: none;
+}
+.prose-brand a[href$=".pdf"]::before {
+  content: "PDF";
+  padding: 0.15em 0.45em;
+  border-radius: 0.3em;
+  background: #b91c1c;
+  color: #fff;
+  font-size: 0.7em;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
 
 .prose-brand {
   --tw-prose-headings: var(--color-brand-dark);

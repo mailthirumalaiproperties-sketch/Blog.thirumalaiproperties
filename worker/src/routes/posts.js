@@ -59,7 +59,9 @@ function canEdit(user, row) {
 async function checkRefs(db, { categoryId, coverMediaId, ogMediaId }) {
   if (categoryId && !(await db.prepare("SELECT id FROM categories WHERE id = ?").bind(categoryId).first())) fail(400, "Unknown category.");
   for (const id of [coverMediaId, ogMediaId]) {
-    if (id && !(await db.prepare("SELECT id FROM media WHERE id = ?").bind(id).first())) fail(400, "Unknown image.");
+    if (id && !(await db.prepare("SELECT id FROM media WHERE id = ? AND mime LIKE 'image/%'").bind(id).first())) {
+      fail(400, "Choose an image for the cover and social image (documents can't be used there).");
+    }
   }
 }
 

@@ -32,7 +32,9 @@ seo.put("/pages/:key", requirePermission("seo.pages"), async (c) => {
   if (!row) fail(404, "Page not found.");
   const body = await c.req.json();
   const ogMediaId = text(body.ogMediaId, "Social image", { max: 40 }) || null;
-  if (ogMediaId && !(await c.env.DB.prepare("SELECT id FROM media WHERE id = ?").bind(ogMediaId).first())) fail(400, "Unknown image.");
+  if (ogMediaId && !(await c.env.DB.prepare("SELECT id FROM media WHERE id = ? AND mime LIKE 'image/%'").bind(ogMediaId).first())) {
+    fail(400, "Choose an image (documents can't be used as the social image).");
+  }
   await c.env.DB.prepare(
     "UPDATE page_seo SET title = ?, description = ?, og_media_id = ?, noindex = ?, updated_at = ?, updated_by = ? WHERE page_key = ?"
   )
@@ -79,8 +81,8 @@ seo.put("/settings/:key", requirePermission("settings.manage"), async (c) => {
   for (const f of ["instagram", "youtube", "facebook"]) {
     if (value[f] && !/^https:\/\//.test(value[f])) fail(400, `${f} link must start with https://`);
   }
-  if (value.defaultOgMediaId && !(await c.env.DB.prepare("SELECT id FROM media WHERE id = ?").bind(value.defaultOgMediaId).first())) {
-    fail(400, "Unknown image.");
+  if (value.defaultOgMediaId && !(await c.env.DB.prepare("SELECT id FROM media WHERE id = ? AND mime LIKE 'image/%'").bind(value.defaultOgMediaId).first())) {
+    fail(400, "Choose an image (documents can't be used as the social image).");
   }
   await c.env.DB.prepare(
     "INSERT INTO settings (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"

@@ -81,17 +81,19 @@ pub.get("/content", async (c) => {
 
 pub.get("/media/:id", async (c) => {
   const id = c.req.param("id").replace(/\.[a-z]+$/i, "");
-  const row = await c.env.DB.prepare("SELECT mime, data FROM media WHERE id = ?").bind(id).first();
-  if (!row) return c.json({ error: "Image not found." }, 404);
+  const row = await c.env.DB.prepare("SELECT filename, mime, data FROM media WHERE id = ?").bind(id).first();
+  if (!row) return c.json({ error: "File not found." }, 404);
   const bytes = row.data instanceof ArrayBuffer ? new Uint8Array(row.data) : Uint8Array.from(row.data);
-  return new Response(bytes, {
-    headers: {
-      "Content-Type": row.mime,
-      "Cache-Control": "public, max-age=31536000, immutable",
-      "X-Content-Type-Options": "nosniff",
-      "Content-Security-Policy": "default-src 'none'",
-    },
-  });
+  const headers = {
+    "Content-Type": row.mime,
+    "Cache-Control": "public, max-age=31536000, immutable",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'",
+  };
+  // Documents are downloaded rather than opened from the API domain; the main
+  // website serves its own copy (see scripts/fetch-cms.mjs there).
+  if (row.mime === "application/pdf") headers["Content-Disposition"] = `attachment; filename="${row.filename}"`;
+  return new Response(bytes, { headers });
 });
 
 export default pub;
