@@ -1,0 +1,61 @@
+name: Deploy admin to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["admin/**", ".github/workflows/deploy-admin.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: admin
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: admin/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run lint
+
+      - name: Check API URL is set
+        run: |
+          if [ -z "${{ vars.CMS_API_URL }}" ]; then echo "::error::Set the CMS_API_URL repository variable"; exit 1; fi
+
+      - name: Build
+        run: npm run build
+        env:
+          # Repository variable: Settings → Secrets and variables → Actions → Variables
+          VITE_API_URL: ${{ vars.CMS_API_URL }}
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: admin/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

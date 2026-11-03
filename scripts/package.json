@@ -1,0 +1,12 @@
+{
+  "name": "thirumalai-cms-scripts",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "import-starter-posts": "node import-starter-posts.mjs"
+  },
+  "dependencies": {
+    "marked": "^18.1.2",
+    "yaml": "^2.9.1"
+  }
+}

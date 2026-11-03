@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* Brand tokens shared with thirumalaiproperties.com */
+@theme {
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+
+  --color-brand-gold: #d29f13;
+  --color-brand-yellow: #f5bc04;
+  --color-brand-dark: #23190e;
+  --color-brand-cream: #faf7f0;
+}
+
+body {
+  font-family: var(--font-sans);
+}
+
+/* Rich-text editor surface */
+.tiptap {
+  min-height: 420px;
+  outline: none;
+}
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: #a8a29e;
+  pointer-events: none;
+}
+.tiptap img {
+  border-radius: 0.75rem;
+  max-height: 420px;
+}
+.tiptap img.ProseMirror-selectednode {
+  outline: 3px solid var(--color-brand-yellow);
+}
+
+.prose-brand {
+  --tw-prose-headings: var(--color-brand-dark);
+  --tw-prose-links: #9f7202;
+  --tw-prose-bullets: var(--color-brand-gold);
+  --tw-prose-counters: var(--color-brand-gold);
+  --tw-prose-quote-borders: var(--color-brand-yellow);
+}
+.prose-brand :where(h2, h3) {
+  font-family: var(--font-serif);
+}

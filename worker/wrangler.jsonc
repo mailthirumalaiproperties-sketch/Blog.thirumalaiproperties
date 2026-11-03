@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "thirumalai-cms-api",
+  "main": "src/index.js",
+  "compatibility_date": "2026-10-01",
+  "observability": { "enabled": true },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "thirumalai-cms",
+      // Replace with the id printed by: npx wrangler d1 create thirumalai-cms
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // Non-secret settings. Secrets (PASSWORD_PEPPER, SETUP_TOKEN, GITHUB_TOKEN)
+  // are set with `npx wrangler secret put <NAME>` and never committed.
+  "vars": {
+    "ALLOWED_ORIGINS": "https://blog.thirumalaiproperties.com",
+    "GITHUB_OWNER": "mailthirumalaiproperties-sketch",
+    "GITHUB_REPO": "thirumalaiproperties.com",
+    "GITHUB_WORKFLOW": "deploy.yml",
+    "GITHUB_REF": "main"
+  }
+}

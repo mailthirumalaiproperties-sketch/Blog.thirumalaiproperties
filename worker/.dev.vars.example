@@ -1,0 +1,6 @@
+# Local development secrets for `npm run dev`. Copy to .dev.vars (gitignored).
+PASSWORD_PEPPER="replace-with-a-long-random-string"
+SETUP_TOKEN="local-setup-code"
+ALLOWED_ORIGINS="http://localhost:5173"
+# Optional: lets "Update website now" work locally
+# GITHUB_TOKEN=""
