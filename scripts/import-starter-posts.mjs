@@ -9,9 +9,10 @@ import { marked } from "marked";
 import { parse as parseYaml } from "yaml";
 
 const API = (process.env.CMS_API_URL || "").replace(/\/$/, "");
-const { CMS_EMAIL, CMS_PASSWORD } = process.env;
-if (!API || !CMS_EMAIL || !CMS_PASSWORD) {
-  console.error("Set CMS_API_URL, CMS_EMAIL and CMS_PASSWORD first.");
+// CMS_TOKEN (an existing admin session token) can be used instead of email + password.
+const { CMS_EMAIL, CMS_PASSWORD, CMS_TOKEN } = process.env;
+if (!API || !(CMS_TOKEN || (CMS_EMAIL && CMS_PASSWORD))) {
+  console.error("Set CMS_API_URL and either CMS_TOKEN or CMS_EMAIL + CMS_PASSWORD first.");
   process.exit(1);
 }
 const DIR = join(import.meta.dirname, "starter-content");
@@ -31,7 +32,7 @@ async function call(method, path, { body, form } = {}) {
   return data;
 }
 
-token = (await call("POST", "/api/auth/login", { body: { email: CMS_EMAIL, password: CMS_PASSWORD } })).token;
+token = CMS_TOKEN || (await call("POST", "/api/auth/login", { body: { email: CMS_EMAIL, password: CMS_PASSWORD } })).token;
 const categories = (await call("GET", "/api/categories")).categories;
 const existing = new Set((await call("GET", "/api/posts")).posts.map((p) => p.slug));
 
