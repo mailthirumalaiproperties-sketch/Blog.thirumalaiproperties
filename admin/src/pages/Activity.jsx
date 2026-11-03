@@ -25,6 +25,7 @@ const ACTIONS = {
   "user.create": "added user",
   "user.update": "updated user",
   "user.reset-password": "reset password for",
+  "user.delete": "deleted user",
   "site.rebuild": "started a website update",
 };
 

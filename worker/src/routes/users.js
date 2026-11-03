@@ -16,8 +16,10 @@ async function activeAdminCount(db) {
 }
 
 users.get("/", async (c) => {
-  const { results } = await c.env.DB.prepare("SELECT * FROM users ORDER BY active DESC, name").all();
-  return c.json({ users: results.map(publicUser) });
+  const { results } = await c.env.DB.prepare(
+    "SELECT u.*, (SELECT COUNT(*) FROM posts p WHERE p.author_id = u.id) AS article_count FROM users u ORDER BY u.active DESC, u.name"
+  ).all();
+  return c.json({ users: results.map((r) => ({ ...publicUser(r), articleCount: r.article_count })) });
 });
 
 // Admin creates the account with a temporary password; the user must change it on first login.
@@ -79,6 +81,36 @@ users.post("/:id/reset-password", async (c) => {
   ]);
   await logActivity(c, "user.reset-password", "user", id, row.name);
   return c.json({ ok: true });
+});
+
+// Permanently removes an account. Their articles and files stay (published ones keep
+// their byline) and move to another active user: ?transferTo=<id>, default the admin
+// doing the delete. The activity log keeps their name.
+users.delete("/:id", async (c) => {
+  const id = c.req.param("id");
+  const me = c.get("user");
+  const db = c.env.DB;
+  if (id === me.id) fail(400, "You can't delete your own account. Ask another admin.");
+  const row = await db.prepare("SELECT * FROM users WHERE id = ?").bind(id).first();
+  if (!row) fail(404, "User not found.");
+  if (row.role === "admin" && row.active && (await activeAdminCount(db)) <= 1) fail(400, "There must be at least one active admin.");
+
+  const heirId = c.req.query("transferTo") || me.id;
+  const heir = heirId === id ? null : await db.prepare("SELECT id, name FROM users WHERE id = ? AND active = 1").bind(heirId).first();
+  if (!heir) fail(400, "Choose an active user to take over their articles.");
+
+  const [articles, files] = await db.batch([
+    db.prepare("UPDATE posts SET author_id = ? WHERE author_id = ?").bind(heir.id, id),
+    db.prepare("UPDATE media SET uploaded_by = ? WHERE uploaded_by = ?").bind(heir.id, id),
+    db.prepare("UPDATE posts SET updated_by = NULL WHERE updated_by = ?").bind(id),
+    db.prepare("UPDATE page_seo SET updated_by = NULL WHERE updated_by = ?").bind(id),
+    db.prepare("DELETE FROM sessions WHERE user_id = ?").bind(id),
+    db.prepare("DELETE FROM users WHERE id = ?").bind(id),
+  ]);
+  const moved = articles.meta.changes;
+  const movedText = moved ? `; ${moved} article${moved === 1 ? "" : "s"} moved to ${heir.name}` : "";
+  await logActivity(c, "user.delete", "user", id, `${row.name} (${row.email})${movedText}`);
+  return c.json({ ok: true, articlesMoved: moved, filesMoved: files.meta.changes, transferredTo: heir.name });
 });
 
 export default users;

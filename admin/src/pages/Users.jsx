@@ -87,12 +87,94 @@ function AddUserModal({ open, onClose, onCreated }) {
   );
 }
 
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+function DeleteUserModal({ target, users, me, onClose, onDeleted }) {
+  const [heir, setHeir] = useState(me.id);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (target) {
+      setHeir(me.id);
+      setError("");
+    }
+  }, [target, me.id]);
+
+  if (!target) return null;
+  const count = target.articleCount ?? 0;
+  const heirs = users.filter((u) => u.active && u.id !== target.id);
+
+  async function confirmDelete() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api(`/api/users/${target.id}?transferTo=${encodeURIComponent(heir)}`, { method: "DELETE" });
+      onDeleted(target, result);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`Delete ${target.name}?`}
+      footer={
+        <>
+          <Button onClick={onClose}>Cancel</Button>
+          <Button variant="destructive" busy={busy} onClick={confirmDelete}>
+            Delete user
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-4 text-sm text-stone-600">
+        <Notice tone="error">{error}</Notice>
+        <p>
+          The account <strong className="text-stone-800">{target.email}</strong> will be removed permanently and logged out. This can't be undone.
+        </p>
+        {count > 0 ? (
+          <Field label={`Move their ${plural(count, "article")} to`} hint="The articles stay on the website, and published ones keep their author name.">
+            {(id) => (
+              <Select id={id} value={heir} onChange={(e) => setHeir(e.target.value)}>
+                {heirs.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
+                    {u.id === me.id ? " (you)" : ""}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </Field>
+        ) : (
+          <p>They haven't written any articles.</p>
+        )}
+        <p className="text-stone-500">
+          Only need to block them for a while? Use <strong>Deactivate</strong> instead. It can be undone.
+        </p>
+      </div>
+    </Modal>
+  );
+}
+
 export default function Users() {
   const { user: me } = useAuth();
   const [users, setUsers] = useState(null);
   const [notice, setNotice] = useState(null);
   const [adding, setAdding] = useState(false);
   const [reset, setReset] = useState(null);
+  const [deleting, setDeleting] = useState(null);
+
+  function onDeleted(u, { articlesMoved, transferredTo }) {
+    setDeleting(null);
+    setUsers((list) => list.filter((x) => x.id !== u.id));
+    const moved = articlesMoved ? ` Their ${plural(articlesMoved, "article")} now ${articlesMoved === 1 ? "belongs" : "belong"} to ${transferredTo}.` : "";
+    setNotice({ tone: "success", text: `${u.name} was deleted.${moved}` });
+  }
 
   useEffect(() => {
     api("/api/users").then((d) => setUsers(d.users)).catch((e) => setNotice({ tone: "error", text: e.message }));
@@ -102,7 +184,7 @@ export default function Users() {
     if (patch.active === false && !window.confirm(`Deactivate ${u.name}? They will be logged out and can't log in until reactivated.`)) return;
     try {
       const { user } = await api(`/api/users/${u.id}`, { method: "PUT", body: patch });
-      setUsers((list) => list.map((x) => (x.id === user.id ? user : x)));
+      setUsers((list) => list.map((x) => (x.id === user.id ? { ...x, ...user } : x)));
       setNotice({ tone: "success", text: `${user.name} updated.` });
     } catch (e) {
       setNotice({ tone: "error", text: e.message });
@@ -188,8 +270,11 @@ export default function Users() {
                             <Button size="sm" onClick={() => resetPassword(u)}>
                               Reset password
                             </Button>
-                            <Button size="sm" variant={u.active ? "danger" : "secondary"} onClick={() => update(u, { active: !u.active })}>
+                            <Button size="sm" onClick={() => update(u, { active: !u.active })}>
                               {u.active ? "Deactivate" : "Reactivate"}
+                            </Button>
+                            <Button size="sm" variant="danger" onClick={() => setDeleting(u)}>
+                              Delete
                             </Button>
                           </div>
                         )}
@@ -213,6 +298,7 @@ export default function Users() {
         </Card>
       </div>
       <AddUserModal open={adding} onClose={() => setAdding(false)} onCreated={(u) => setUsers((list) => [...list, u])} />
+      <DeleteUserModal target={deleting} users={users ?? []} me={me} onClose={() => setDeleting(null)} onDeleted={onDeleted} />
     </>
   );
 }

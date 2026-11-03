@@ -5,6 +5,7 @@ const BUTTON_STYLES = {
   dark: "bg-brand-dark text-white hover:bg-black",
   secondary: "bg-white text-stone-800 border border-stone-300 hover:border-brand-gold hover:bg-brand-cream",
   danger: "bg-white text-red-700 border border-red-200 hover:bg-red-50",
+  destructive: "bg-red-600 text-white hover:bg-red-700 shadow-sm",
   ghost: "text-stone-600 hover:bg-stone-100",
 };
 
