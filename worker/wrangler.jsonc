@@ -9,8 +9,8 @@
     {
       "binding": "DB",
       "database_name": "thirumalai-cms",
-      // Replace with the id printed by: npx wrangler d1 create thirumalai-cms
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // Created 2026-11-03 in region APAC (npx wrangler d1 create thirumalai-cms --location apac)
+      "database_id": "52b5b09a-f255-4898-b375-7219b1190e79",
       "migrations_dir": "migrations"
     }
   ],
